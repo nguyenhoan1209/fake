@@ -4,7 +4,7 @@ import { DownloadOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import './ChatMessage.scss';
 
-const { Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 export interface MessageAttachment {
   id: string;
@@ -40,6 +40,25 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onDownloadAttachment
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  // Function to sanitize and render HTML content
+  const renderMessageContent = (content: string) => {
+    // Basic HTML sanitization - remove dangerous tags and attributes
+    const sanitizedContent = content
+      // Remove script tags
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      // Remove event handlers
+      .replace(/on\w+="[^"]*"/g, '')
+      .replace(/on\w+='[^']*'/g, '')
+      // Remove javascript: links
+      .replace(/javascript:/gi, '')
+      // Remove form and input tags for security
+      .replace(/<\/?(?:form|input|textarea|select|button)[^>]*>/gi, '')
+      // Convert line breaks to proper HTML
+      .replace(/\n/g, '<br/>');
+    
+    return { __html: sanitizedContent };
   };
 
   const renderAttachment = (attachment: MessageAttachment) => {
@@ -110,9 +129,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onDownloadAttachment
 
         <div className={`message-bubble ${message.isOwn ? 'own-bubble' : 'other-bubble'}`}>
           {message.content && (
-            <Paragraph className="message-text" style={{ marginBottom: 0 }}>
-              {message.content}
-            </Paragraph>
+            <div 
+              className="message-text" 
+              style={{ marginBottom: 0 }}
+              dangerouslySetInnerHTML={renderMessageContent(message.content)}
+            />
           )}
 
           {message.attachments && message.attachments.length > 0 && (

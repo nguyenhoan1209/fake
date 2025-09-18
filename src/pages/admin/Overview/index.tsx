@@ -1,10 +1,9 @@
 import type { FC } from 'react';
 import { useState } from 'react';
 import { useFetchStreams, useFetchTopics, useFetchMessages } from 'libs/hooks';
-import { Col, List, Typography, Spin, Empty, Row, message } from 'antd';
-import { Chat, type ChatMessageData } from 'components/Chat';
+import { Col, List, Typography, Spin, Empty, Row } from 'antd';
+import { Chat } from 'components/Chat';
 import './index.scss';
-import { set } from 'zod';
 
 const { Title } = Typography;
 
@@ -20,7 +19,7 @@ const OverviewPage: FC = () => {
   const { data: streams, isLoading } = useFetchStreams();
   const [selectedStream, setSelectedStream] = useState<Stream | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<any | null>(null);
-  const { data: messages, isLoading: messageLoad } = useFetchMessages(streamId, selectedTopic?.name); // Fetch messages based on selected stream and topic
+  const { data: messages = [], isLoading: messageLoad } = useFetchMessages(streamId || undefined, selectedTopic?.name); // Fetch messages based on selected stream and topic
 
   const handleStreamSelect = (stream: Stream) => {
     setSelectedStream(stream);
@@ -69,6 +68,7 @@ const OverviewPage: FC = () => {
                       key={topic.max_id}
                       className={selectedTopic?.max_id === topic.max_id ? 'selected' : ''}
                       onClick={() => setSelectedTopic(topic)}
+                      style={{ cursor: 'pointer' }}
                     >
                       {topic.name}
                     </List.Item>
@@ -90,7 +90,17 @@ const OverviewPage: FC = () => {
                   ? `Chat: ${selectedStream.name}`
                   : 'Select a stream to start chatting'
             }
+            messages={messages}
+            loading={messageLoad}
             currentUserId="current-user"
+            onSendMessage={(message, attachments) => {
+              console.log('Sending message:', message, attachments);
+              // TODO: Implement send message API
+            }}
+            onSendVoiceMessage={(audioBlob) => {
+              console.log('Sending voice message:', audioBlob);
+              // TODO: Implement send voice message API
+            }}
           />
         </Col>
       </Row>
