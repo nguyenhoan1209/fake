@@ -1,0 +1,77 @@
+.chat-input-container {
+  border-top: 1px solid #f0f0f0;
+  padding: 16px;
+  background: #fff;
+
+  .attachments-preview {
+    margin-bottom: 12px;
+
+    .attachment-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+
+      .attachment-item {
+        background: #f0f0f0;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        color: #666;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  .chat-input-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  .recording-btn {
+    animation: pulse 1.5s infinite;
+  }
+
+  .recording-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    color: #ff4d4f;
+    font-size: 14px;
+
+    .recording-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #ff4d4f;
+      border-radius: 50%;
+      animation: blink 1s infinite;
+    }
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0.3;
+  }
+}

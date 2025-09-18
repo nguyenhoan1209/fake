@@ -1,0 +1,117 @@
+.chat-message {
+  display: flex;
+  margin-bottom: 16px;
+
+  &.own-message {
+    flex-direction: row-reverse;
+
+    .message-content {
+      align-items: flex-end;
+    }
+
+    .own-bubble {
+      background-color: #1890ff;
+      color: white;
+      margin-left: 20%;
+    }
+
+    .message-time-own {
+      text-align: right;
+      margin-top: 4px;
+    }
+  }
+
+  &.other-message {
+    .message-avatar {
+      margin-right: 12px;
+      margin-top: 8px;
+    }
+
+    .other-bubble {
+      background-color: #f0f0f0;
+      color: #333;
+      margin-right: 20%;
+    }
+  }
+
+  .message-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+
+    .message-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+
+      .sender-name {
+        font-size: 14px;
+      }
+
+      .message-time {
+        font-size: 12px;
+      }
+    }
+
+    .message-bubble {
+      padding: 8px 12px;
+      border-radius: 12px;
+      word-wrap: break-word;
+      max-width: fit-content;
+
+      .message-text {
+        white-space: pre-wrap;
+      }
+
+      .message-attachments {
+        margin-top: 8px;
+
+        .attachment-image {
+          margin-bottom: 8px;
+
+          img {
+            display: block;
+            border-radius: 8px;
+          }
+        }
+
+        .attachment-audio,
+        .attachment-file {
+          margin-bottom: 8px;
+
+          .ant-card {
+            background: rgba(255, 255, 255, 0.9);
+          }
+
+          .audio-controls,
+          .file-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            .audio-name,
+            .file-name {
+              flex: 1;
+              font-size: 14px;
+            }
+
+            .file-size {
+              font-size: 12px;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+.chat-message.own-message .message-bubble.own-bubble .ant-card {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+
+  .ant-card-body {
+    color: white;
+  }
+}

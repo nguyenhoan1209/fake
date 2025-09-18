@@ -1,0 +1,12 @@
+.selected {
+  background-color: #e6f7ff !important;
+  border-color: #91d5ff !important;
+}
+
+.ant-list-item {
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: #f5f5f5;
+  }
+}

@@ -1,0 +1,22 @@
+
+
+.ant-table-global {
+  .ant-table-thead {
+    .ant-table-cell {
+      padding: 4px !important;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 128%;
+      white-space: nowrap;
+    }
+  }
+
+  .ant-table-tbody {
+    .ant-table-cell {
+      padding: 6px !important;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 140%;
+    }
+  }
+}
