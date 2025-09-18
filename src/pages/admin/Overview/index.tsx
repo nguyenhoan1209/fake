@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import { useState } from 'react';
+import { useAppSelector } from 'hooks/useAppSelector';
 import { useFetchStreams, useFetchTopics, useFetchMessages, useSendMessage } from 'libs/hooks';
 import { Col, List, Typography, Spin, Empty, Row } from 'antd';
 import { Chat } from 'components/Chat';
@@ -21,6 +22,7 @@ const OverviewPage: FC = () => {
   const [selectedTopic, setSelectedTopic] = useState<any | null>(null);
   const { data: messages = [], isLoading: messageLoad } = useFetchMessages(streamId || undefined, selectedTopic?.name);
   const { mutateAsync: sendMessage } = useSendMessage();
+  const currentUserId = useAppSelector((state) => state.user.profile?.user_id?.toString?.()) as string | undefined;
 
   const handleStreamSelect = (stream: Stream) => {
     setSelectedStream(stream);
@@ -108,7 +110,7 @@ const OverviewPage: FC = () => {
             }
             messages={messages}
             loading={messageLoad}
-            currentUserId="current-user"
+            currentUserId={currentUserId || 'current-user'}
             onSendMessage={(message) => handleSendMessage(message)}
           />
         </Col>

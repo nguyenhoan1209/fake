@@ -82,9 +82,10 @@ const Chat: React.FC<ChatProps> = ({
   };
 
   // Process messages to add isOwn property
+
   const processedMessages = messages.map((message) => ({
     ...message,
-    isOwn: message.sender.id === currentUserId,
+    isOwn: message.isOwn ?? (message.sender.id === currentUserId),
   }));
 
   return (
