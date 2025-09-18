@@ -1,10 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { fetcher, HTTPMethod } from "config/api";
 import { ChatMessageData } from "components/Chat/ChatMessage";
 
 const url = {
     me: "api/v1/streams",
     get_messages: "api/v1/messages",
+    send_message: "api/v1/messages",
 };
 
 // Zulip message interface
@@ -79,4 +80,25 @@ const useFetchMessages = (channelId?: number, topicName?: string) => {
     });
 };
 
-export { useFetchStreams, useFetchMessages, transformZulipMessage };
+const useSendMessage = () => {
+    return useMutation({
+        mutationFn: (body: any): Promise<any> =>
+            fetcher(
+                {
+                    method: HTTPMethod.POST,
+                    url: url.get_messages,
+                    data: body,
+                },
+                { isFormData: false, withToken: true },
+            ),
+        onSuccess: async () => {
+            
+        },
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        onError: (error: any) => {
+            
+        },
+    });
+}
+
+export { useFetchStreams, useFetchMessages, transformZulipMessage, useSendMessage };

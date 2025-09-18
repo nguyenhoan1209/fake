@@ -66,8 +66,7 @@ const useUpdateProfile = () => {
         },
         { isFormData: true, withToken: true },
       ),
-    onSuccess: async (response) => {
-      console.log('Update profile response:', response);
+    onSuccess: async () => {
       await queryClient.fetchQuery({
         queryKey: ['userProfile'],
         queryFn: fetchUserProfile,
