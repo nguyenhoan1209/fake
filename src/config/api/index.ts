@@ -49,9 +49,6 @@ const getAuthorization = (defaultOptions: ConfigOptions | undefined) => {
   return undefined;
 };
 
-const displayError = (errorMessage: string) => {
-  notifyError(t('error_message.something_went_wrong'), errorMessage, 5);
-};
 
 export const fetcher = <T>(
   config: AxiosRequestConfig & {
@@ -77,17 +74,12 @@ export const fetcher = <T>(
         }
       })
       .catch((error: AxiosError<BaseResponse<T>>) => {
-        if (error.code === 'ERR_NETWORK') displayError('Please check internet connection!');
-        if (!options?.hideError === false && error.response?.data.message) {
-          displayError(error.response?.data.message);
-        }
         if (
           error.response?.status &&
           +error.response?.status === 401 &&
           typeof window !== 'undefined' &&
           window.localStorage.getItem(KEY_AUTH_INFORMATION)
         ) {
-          displayError('Token expire!');
           logoutUser();
           return window.location.replace(navigateToPublicRoute());
         }

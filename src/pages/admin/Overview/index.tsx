@@ -1,15 +1,27 @@
 import type { FC } from 'react';
-import { useState } from 'react';
-import { useAppSelector } from 'hooks/useAppSelector';
-import { useFetchStreams, useFetchTopics, useFetchMessages, useSendMessage } from 'libs/hooks';
+import { useState, useEffect } from 'react';
+import {
+  useFetchStreams,
+  useFetchTopics,
+  useFetchMessages,
+  useSendMessage,
+  useFetchRegisterData,
+  usePollingEvent,
+} from 'libs/hooks';
 import { Col, List, Typography, Spin, Empty, Row } from 'antd';
 import { Chat } from 'components/Chat';
 import './index.scss';
+import { useAppSelector } from 'hooks/useAppSelector';
 
 const { Title } = Typography;
 
 interface Stream {
   stream_id: string;
+  name: string;
+}
+
+interface Topic {
+  max_id: string;
   name: string;
 }
 
@@ -19,10 +31,60 @@ const OverviewPage: FC = () => {
   const { data: topics, isLoading: topicLoad } = useFetchTopics(streamId); // Only fetch when streamId is not null
   const { data: streams, isLoading } = useFetchStreams();
   const [selectedStream, setSelectedStream] = useState<Stream | null>(null);
-  const [selectedTopic, setSelectedTopic] = useState<any | null>(null);
-  const { data: messages = [], isLoading: messageLoad } = useFetchMessages(streamId || undefined, selectedTopic?.name);
+  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
+  const { data: initialMessages = [], isLoading: messageLoad } = useFetchMessages(
+    streamId || undefined,
+    selectedTopic?.name,
+  );
+  const [messages, setMessages] = useState(initialMessages);
   const { mutateAsync: sendMessage } = useSendMessage();
   const currentUserId = useAppSelector((state) => state.user.profile?.user_id?.toString?.()) as string | undefined;
+  const { data: registerData } = useFetchRegisterData();
+  const { data: events } = usePollingEvent(-1, registerData?.queue_id);
+
+  // Update local messages when initial messages change
+  useEffect(() => {
+    setMessages(initialMessages);
+  }, [initialMessages]);
+
+  // Handle incoming message events
+  useEffect(() => {
+    if (events?.events && Array.isArray(events.events)) {
+      events.events.forEach((event) => {
+        if (event.type === 'message' && event.message) {
+          const newMessage = event.message ;
+
+          // Check if the message belongs to the current stream and topic
+          const isCurrentStream = selectedStream && newMessage.stream_id === Number(selectedStream.stream_id);
+          const isCurrentTopic = selectedTopic && newMessage.subject === selectedTopic.name;
+
+          if (isCurrentStream && isCurrentTopic) {
+            // Transform the message to ChatMessageData format
+            const chatMessage: ChatMessageData = {
+              id: newMessage.id.toString(),
+              content: newMessage.content,
+              timestamp: new Date(newMessage.timestamp * 1000),
+              sender: {
+                id: newMessage.sender_id.toString(),
+                name: newMessage.sender_full_name,
+                avatar: newMessage.avatar_url,
+              },
+              attachments: [],
+            };
+
+            // Add the new message to the list if it doesn't already exist
+            setMessages((prevMessages) => {
+              const messageExists = prevMessages.some((msg) => msg.id === chatMessage.id);
+              if (!messageExists) {
+                return [...prevMessages, chatMessage];
+              }
+              return prevMessages;
+            });
+          }
+        }
+      });
+    }
+  }, [events, selectedStream, selectedTopic]);
 
   const handleStreamSelect = (stream: Stream) => {
     setSelectedStream(stream);
@@ -30,18 +92,18 @@ const OverviewPage: FC = () => {
     setSelectedTopic(null);
   };
 
-  const handleSendMessage = async (new_message) => {
+  const handleSendMessage = async (new_message: string) => {
     if (!new_message || !selectedTopic) return;
     try {
       const formData = new FormData();
       formData.append('type', 'stream');
       formData.append('content', new_message);
-      formData.append('to', selectedStream?.stream_id);
+      formData.append('to', selectedStream?.stream_id || '');
       formData.append('topic', selectedTopic.name);
       // Call the sendMessage mutation
       await sendMessage(formData);
     } catch (error) {
-      console.error("Failed to send message:", error);
+      console.error('Failed to send message:', error);
     }
   };
 
@@ -81,7 +143,7 @@ const OverviewPage: FC = () => {
                 <List
                   bordered
                   dataSource={topics?.topics}
-                  renderItem={(topic: any) => (
+                  renderItem={(topic: Topic) => (
                     <List.Item
                       key={topic.max_id}
                       className={selectedTopic?.max_id === topic.max_id ? 'selected' : ''}
