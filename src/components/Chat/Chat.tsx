@@ -13,6 +13,8 @@ interface ChatProps {
   onSendMessage?: (message: string, attachments?: File[]) => void;
   onSendVoiceMessage?: (audioBlob: Blob) => void;
   onDownloadAttachment?: (attachment: MessageAttachment) => void;
+  onEmojiReaction?: (messageId: string, emoji: string) => void;
+  onMessageAction?: (messageId: string, action: string) => void;
   currentUserId?: string;
 }
 
@@ -23,6 +25,8 @@ const Chat: React.FC<ChatProps> = ({
   onSendMessage,
   onSendVoiceMessage,
   onDownloadAttachment,
+  onEmojiReaction,
+  onMessageAction,
   currentUserId = 'current-user',
 }) => {
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
@@ -81,6 +85,48 @@ const Chat: React.FC<ChatProps> = ({
     }
   };
 
+  const handleEmojiReaction = (messageId: string, emoji: string) => {
+    if (onEmojiReaction) {
+      onEmojiReaction(messageId, emoji);
+    } else {
+      // Default behavior - log to console
+      console.log(`Emoji reaction: ${emoji} on message ${messageId}`);
+    }
+  };
+
+  const handleMessageAction = (messageId: string, action: string) => {
+    if (onMessageAction) {
+      onMessageAction(messageId, action);
+    } else {
+      // Default behavior based on action
+      switch (action) {
+        case 'copy':
+          const message = messages.find(m => m.id === messageId);
+          if (message) {
+            navigator.clipboard.writeText(message.content).catch(console.error);
+          }
+          break;
+        case 'reply':
+          console.log(`Reply to message ${messageId}`);
+          break;
+        case 'pin':
+          console.log(`Pin message ${messageId}`);
+          break;
+        case 'forward':
+          console.log(`Forward message ${messageId}`);
+          break;
+        case 'delete':
+          console.log(`Delete message ${messageId}`);
+          break;
+        case 'select':
+          console.log(`Select message ${messageId}`);
+          break;
+        default:
+          console.log(`Action ${action} on message ${messageId}`);
+      }
+    }
+  };
+
   // Process messages to add isOwn property
 
   const processedMessages = messages.map((message) => ({
@@ -114,6 +160,8 @@ const Chat: React.FC<ChatProps> = ({
                   message={message}
                   onDownloadAttachment={handleDownloadAttachment}
                   onPlayAudio={handlePlayAudio}
+                  onEmojiReaction={handleEmojiReaction}
+                  onMessageAction={handleMessageAction}
                 />
               ))}
               <div ref={messagesEndRef} />

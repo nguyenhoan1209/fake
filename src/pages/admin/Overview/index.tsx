@@ -8,6 +8,7 @@ import {
   useFetchRegisterData,
   usePollingEvent,
 } from 'libs/hooks';
+import { useQueryClient } from '@tanstack/react-query';
 import { Col, List, Typography, Spin, Empty, Row } from 'antd';
 import { Chat } from 'components/Chat';
 import './index.scss';
@@ -26,6 +27,7 @@ interface Topic {
 }
 
 const OverviewPage: FC = () => {
+  const queryClient = useQueryClient();
   const [streamId, setStreamId] = useState<number | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { data: topics, isLoading: topicLoad } = useFetchTopics(streamId); // Only fetch when streamId is not null
@@ -107,6 +109,19 @@ const OverviewPage: FC = () => {
     }
   };
 
+  const handleEmojiReaction = (messageId: string, emoji: string) => {
+    console.log(`Emoji reaction: ${emoji} on message ${messageId}`);
+    console.log('Current messages:', messages);
+    // Refresh messages after reaction
+    queryClient.invalidateQueries({ queryKey: ['messages', streamId, selectedTopic?.name] });
+  };
+
+  const handleRemoveReaction = (messageId: string, emoji: string) => {
+    console.log(`Remove reaction: ${emoji} from message ${messageId}`);
+    // Refresh messages after removing reaction
+    queryClient.invalidateQueries({ queryKey: ['messages', streamId, selectedTopic?.name] });
+  };
+
   return (
     <>
       <Title level={3}>Chat</Title>
@@ -174,6 +189,8 @@ const OverviewPage: FC = () => {
             loading={messageLoad}
             currentUserId={currentUserId || 'current-user'}
             onSendMessage={(message) => handleSendMessage(message)}
+            onEmojiReaction={handleEmojiReaction}
+            onRemoveReaction={handleRemoveReaction}
           />
         </Col>
       </Row>

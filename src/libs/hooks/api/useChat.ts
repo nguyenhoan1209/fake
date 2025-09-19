@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetcher, HTTPMethod } from "config/api";
 import { ChatMessageData } from "components/Chat/ChatMessage";
 import { useEffect, useRef, useState } from "react";
@@ -7,45 +7,34 @@ const url = {
   me: "api/v1/streams",
   get_messages: "api/v1/messages",
   send_message: "api/v1/messages",
+    add_reaction: "api/v1/messages",
+    remove_reaction: "api/v1/messages",
   events: "api/v1/events",
 };
 
+
+
 // Zulip message interface
 interface ZulipMessage {
-  id: number;
-  content: string;
-  timestamp: number;
-  sender_id: number;
-  sender_full_name: string;
-  avatar_url?: string;
-  subject?: string;
-  type: string;
+    id: number;
+    content: string;
+    timestamp: number;
+    sender_id: number;
+    sender_full_name: string;
+    avatar_url?: string;
+    subject?: string;
+    type: string;
+    reactions?: Array<{
+        emoji_name: string;
+        emoji_code: string;
+        reaction_type: string;
+        user_id: number;
+    }>;
 }
-
-interface ZulipMessagesResponse {
-  messages: ZulipMessage[];
-  result: string;
-  msg?: string;
-}
-
-// Zulip event interface
-interface ZulipEvent {
-  id: number;
-  type: string;
-  message?: ZulipMessage;
-  [key: string]: unknown;
-}
-
-// Zulip events response interface
-interface ZulipEventsResponse {
-  result: string;
-  msg?: string;
-  events: ZulipEvent[];
-}
-
 
 // Transform Zulip message to ChatMessageData
 const transformZulipMessage = (zulipMessage: ZulipMessage): ChatMessageData => {
+  console.log('Transforming Zulip message:', zulipMessage);
   return {
     id: zulipMessage.id.toString(),
     content: zulipMessage.content,
@@ -56,6 +45,7 @@ const transformZulipMessage = (zulipMessage: ZulipMessage): ChatMessageData => {
       avatar: zulipMessage.avatar_url,
     },
     attachments: [], // TODO: Handle attachments if needed
+    reactions: zulipMessage.reactions || [], // Map reactions from Zulip
   };
 };
 
@@ -75,25 +65,29 @@ const useFetchStreams = () => {
 const useFetchMessages = (channelId?: number, topicName?: string) => {
   return useQuery({
     queryKey: ["messages", channelId, topicName],
-    queryFn: async (): Promise<ChatMessageData[]> => {
-      const response: ZulipMessagesResponse = await fetcher({
-        method: HTTPMethod.GET,
-        url: url.get_messages,
-        params: {
-          anchor: "newest",
-          num_before: 60,
-          num_after: 150,
-          narrow: `[{"negated":false,"operator":"channel","operand":${channelId}},{"operator":"topic","operand":"${topicName}"}]`
+        queryFn: async (): Promise<ChatMessageData[]> => {
+            const response: ZulipMessagesResponse = await fetcher({
+                method: HTTPMethod.GET,
+                url: url.get_messages,
+                params: { 
+                    anchor: "newest", 
+                    num_before: 60, 
+                    num_after: 150, 
+                    narrow: `[{"negated":false,"operator":"channel","operand":${channelId}},{"operator":"topic","operand":"${topicName}"}]` 
+                },
+            });
+            
+            console.log('API Response:', response);
+            
+            // Transform Zulip messages to ChatMessageData format
+            if (response.result === 'success' && response.messages) {
+                const transformedMessages = response.messages.map(transformZulipMessage);
+                console.log('Transformed messages:', transformedMessages);
+                return transformedMessages;
+            }
+            
+            return [];
         },
-      });
-
-      // Transform Zulip messages to ChatMessageData format
-      if (response.result === 'success' && response.messages) {
-        return response.messages.map(transformZulipMessage);
-      }
-
-      return [];
-    },
     enabled: !!channelId && !!topicName,
   });
 };
@@ -117,7 +111,68 @@ const useSendMessage = () => {
     },
   });
 }
-
+const useAddReaction = () => {
+    const queryClient = useQueryClient();
+    
+    return useMutation({
+        mutationFn: ({ messageId, reactionData }: { messageId: number; reactionData: ReactionRequest }): Promise<any> => {
+            // Convert object to URLSearchParams for form data
+            const formData = new FormData();
+            formData.append('emoji_name', reactionData.emoji_name);
+            if (reactionData.emoji_code) {
+                formData.append('emoji_code', reactionData.emoji_code);
+            }
+            if (reactionData.reaction_type) {
+                formData.append('reaction_type', reactionData.reaction_type);
+            }
+            
+            return fetcher(
+                {
+                    method: HTTPMethod.POST,
+                    url: `${url.add_reaction}/${messageId}/reactions`,
+                    data: formData,
+                },
+                { isFormData: true, withToken: true },
+            );
+        },
+        onSuccess: async () => {
+            queryClient.invalidateQueries({ queryKey: ['messages'] });
+        },
+        onError: (error: any) => {
+        },
+    });
+}
+const useRemoveReaction = () => {
+    const queryClient = useQueryClient();
+    
+    return useMutation({
+        mutationFn: ({ messageId, reactionData }: { messageId: number; reactionData: ReactionRequest }): Promise<any> => {
+            // Convert object to URLSearchParams for form data
+            const formData = new URLSearchParams();
+            formData.append('emoji_name', reactionData.emoji_name);
+            if (reactionData.emoji_code) {
+                formData.append('emoji_code', reactionData.emoji_code);
+            }
+            if (reactionData.reaction_type) {
+                formData.append('reaction_type', reactionData.reaction_type);
+            }
+            
+            return fetcher(
+                {
+                    method: HTTPMethod.DELETE,
+                    url: `${url.remove_reaction}/${messageId}/reactions`,
+                    data: formData,
+                },
+                { isFormData: true, withToken: true },
+            );
+        },
+        onSuccess: async () => {
+            queryClient.invalidateQueries({ queryKey: ['messages'] });
+        },
+        onError: (error: any) => {
+        },
+    });
+}
 
 
 interface LongLiveQueryParams {
@@ -284,4 +339,4 @@ const usePollingEvent = (initiallast_event_id: number = -1, queue_id?: string) =
   );
 };
 
-export { useFetchStreams, useFetchMessages, transformZulipMessage, useSendMessage, useLongLiveQuery, usePollingEvent };
+export { useFetchStreams, useFetchMessages, transformZulipMessage, useSendMessage, useAddReaction, useRemoveReaction, useLongLiveQuery, usePollingEvent };

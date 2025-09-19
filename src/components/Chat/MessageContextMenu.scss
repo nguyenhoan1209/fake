@@ -1,0 +1,256 @@
+.message-context-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  background: transparent;
+}
+
+.message-context-menu {
+  position: absolute;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  min-width: 200px;
+  z-index: 1001;
+  animation: contextMenuFadeIn 0.15s ease-out;
+  border: 1px solid #e5e5e5;
+
+  // Đảm bảo menu không bị cắt bởi viewport
+  &.menu-top {
+    transform: translateY(-100%);
+  }
+
+  &.menu-left {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes contextMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+// Emoji Reactions Section
+.emoji-reactions-section {
+  margin-bottom: 8px;
+
+  .emoji-reactions-container {
+    display: flex;
+    align-items: center;
+    background: #f5f5f5;
+    border-radius: 8px;
+    padding: 6px 8px;
+    gap: 4px;
+    overflow-x: auto;
+
+    .emoji-reaction-btn {
+      background: none;
+      border: none;
+      padding: 4px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      transition: all 0.2s ease;
+      min-width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.1);
+        transform: scale(1.1);
+      }
+
+      &:active {
+        transform: scale(0.95);
+      }
+
+      &.reacted {
+        background: rgba(24, 144, 255, 0.1);
+        border: 1px solid rgba(24, 144, 255, 0.3);
+        
+        &:hover {
+          background: rgba(24, 144, 255, 0.2);
+        }
+      }
+    }
+
+    .emoji-more-btn {
+      background: none;
+      border: none;
+      padding: 4px;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #666;
+      font-size: 12px;
+      min-width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.1);
+        color: #333;
+      }
+    }
+  }
+}
+
+// Message Actions Section
+.message-actions-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .message-action-btn {
+    background: none;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #333;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    text-align: left;
+    width: 100%;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    &:active {
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+
+      &:hover {
+        background: none;
+      }
+    }
+
+    .action-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+    }
+
+    .action-label {
+      flex: 1;
+      font-weight: 400;
+    }
+
+    // Specific styling for different actions
+    &[data-action="reply"] {
+      .action-icon {
+        color: #52c41a;
+      }
+    }
+
+    &[data-action="pin"] {
+      .action-icon {
+        color: #faad14;
+      }
+    }
+
+    &[data-action="copy"] {
+      .action-icon {
+        color: #1890ff;
+      }
+    }
+
+    &[data-action="forward"] {
+      .action-icon {
+        color: #722ed1;
+      }
+    }
+
+    &[data-action="delete"] {
+      .action-icon {
+        color: #ff4d4f;
+      }
+    }
+
+    &[data-action="select"] {
+      .action-icon {
+        color: #13c2c2;
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .message-context-menu {
+    min-width: 180px;
+    padding: 6px;
+
+    .emoji-reactions-section {
+      .emoji-reactions-container {
+        padding: 4px 6px;
+        gap: 2px;
+
+        .emoji-reaction-btn {
+          min-width: 24px;
+          height: 24px;
+          font-size: 16px;
+        }
+
+        .emoji-more-btn {
+          min-width: 24px;
+          height: 24px;
+        }
+      }
+    }
+
+    .message-actions-section {
+      .message-action-btn {
+        padding: 6px 10px;
+        font-size: 13px;
+
+        .action-icon {
+          font-size: 14px;
+          width: 14px;
+          height: 14px;
+        }
+      }
+    }
+  }
+}
+
+// Light theme adjustments
+@media (prefers-color-scheme: light) {
+  .message-context-menu {
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+
+    .emoji-reactions-section {
+      .emoji-reactions-container {
+        background: #f5f5f5;
+      }
+    }
+  }
+}
