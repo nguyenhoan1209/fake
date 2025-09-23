@@ -62,7 +62,7 @@ export enum APP {
 }
 
 export const NETWORK_CONFIG = {
-  TIMEOUT: 30000,
+  TIMEOUT: 90000,
   USE_TOKEN: true,
   WITH_CREDENTIALS: import.meta.env.VITE_WITH_CREDENTIALS === 'true',
 } as const;

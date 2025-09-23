@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   useFetchStreams,
   useFetchTopics,
@@ -34,7 +34,7 @@ const OverviewPage: FC = () => {
   const { data: streams, isLoading } = useFetchStreams();
   const [selectedStream, setSelectedStream] = useState<Stream | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
-  const { data: initialMessages = [], isLoading: messageLoad } = useFetchMessages(
+  const { data: initialMessages, isLoading: messageLoad } = useFetchMessages(
     streamId || undefined,
     selectedTopic?.name,
   );
@@ -47,7 +47,7 @@ const OverviewPage: FC = () => {
   // Update local messages when initial messages change
   useEffect(() => {
     setMessages(initialMessages);
-  }, [initialMessages]);
+  }, [JSON.stringify(initialMessages)]);
 
   // Handle incoming message events
   useEffect(() => {
