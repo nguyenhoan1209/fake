@@ -76,13 +76,12 @@ const useFetchMessages = (channelId?: number, topicName?: string) => {
                     narrow: `[{"negated":false,"operator":"channel","operand":${channelId}},{"operator":"topic","operand":"${topicName}"}]` 
                 },
             });
-            
-            console.log('API Response:', response);
+
             
             // Transform Zulip messages to ChatMessageData format
             if (response.result === 'success' && response.messages) {
                 const transformedMessages = response.messages.map(transformZulipMessage);
-                console.log('Transformed messages:', transformedMessages);
+
                 return transformedMessages;
             }
             

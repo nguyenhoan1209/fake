@@ -60,7 +60,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const removeReactionMutation = useRemoveReaction();
 
   // Context menu handlers
-  const handleMessageClick = (e: React.MouseEvent) => {
+  const handleMessageRightClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -197,7 +197,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       <div 
         ref={messageRef}
         className={`chat-message ${message.isOwn ? 'own-message' : 'other-message'}`}
-        onClick={handleMessageClick}
+        onContextMenu={handleMessageRightClick}
       >
         {!message.isOwn && (
           <Avatar src={message.sender.avatar} className="message-avatar">

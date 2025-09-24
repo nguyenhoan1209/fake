@@ -132,6 +132,7 @@ const OverviewPage: FC = () => {
           ) : streams?.streams?.length ? (
             <List
               bordered
+              className="streams-list"
               dataSource={streams.streams}
               renderItem={(stream: Stream) => (
                 <List.Item
