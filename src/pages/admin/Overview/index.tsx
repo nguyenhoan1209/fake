@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   useFetchStreams,
   useFetchTopics,
@@ -7,10 +7,14 @@ import {
   useSendMessage,
   useFetchRegisterData,
   usePollingEvent,
+  usePinTopic,
+  useUnpinTopic,
 } from 'libs/hooks';
 import { useQueryClient } from '@tanstack/react-query';
-import { Col, List, Typography, Spin, Empty, Row } from 'antd';
+import { Col, List, Typography, Spin, Empty, Row, Button } from 'antd';
+import { Pin, PinOff } from 'lucide-react';
 import { Chat } from 'components/Chat';
+import { ChatMessageData } from 'components/Chat/ChatMessage';
 import './index.scss';
 import { useAppSelector } from 'hooks/useAppSelector';
 
@@ -21,9 +25,16 @@ interface Stream {
   name: string;
 }
 
+interface StreamsResponse {
+  streams: Stream[];
+}
+
 interface Topic {
   max_id: string;
   name: string;
+  is_pinned?: boolean;
+  pin_order?: number | null;
+  pinned_at?: string | null;
 }
 
 const OverviewPage: FC = () => {
@@ -34,20 +45,26 @@ const OverviewPage: FC = () => {
   const { data: streams, isLoading } = useFetchStreams();
   const [selectedStream, setSelectedStream] = useState<Stream | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
-  const { data: initialMessages = [], isLoading: messageLoad } = useFetchMessages(
+  const { data: initialMessages, isLoading: messageLoad } = useFetchMessages(
     streamId || undefined,
     selectedTopic?.name,
   );
   const [messages, setMessages] = useState(initialMessages);
   const { mutateAsync: sendMessage } = useSendMessage();
   const currentUserId = useAppSelector((state) => state.user.profile?.user_id?.toString?.()) as string | undefined;
+  const { mutateAsync: pinTopic } = usePinTopic();
+  const { mutateAsync: unpinTopic } = useUnpinTopic();
+  
+  // Temporary local state for UI (until backend is ready)
+  const [pinnedTopics, setPinnedTopics] = useState<Set<string>>(new Set());
+  const [pinOrder, setPinOrder] = useState<string[]>([]);
   const { data: registerData } = useFetchRegisterData();
   const { data: events } = usePollingEvent(-1, registerData?.queue_id);
 
   // Update local messages when initial messages change
   useEffect(() => {
     setMessages(initialMessages);
-  }, [initialMessages]);
+  }, [JSON.stringify(initialMessages)]);
 
   // Handle incoming message events
   useEffect(() => {
@@ -76,6 +93,7 @@ const OverviewPage: FC = () => {
 
             // Add the new message to the list if it doesn't already exist
             setMessages((prevMessages) => {
+              if (!prevMessages) return [chatMessage];
               const messageExists = prevMessages.some((msg) => msg.id === chatMessage.id);
               if (!messageExists) {
                 return [...prevMessages, chatMessage];
@@ -92,6 +110,47 @@ const OverviewPage: FC = () => {
     setSelectedStream(stream);
     setStreamId(Number(stream.stream_id));
     setSelectedTopic(null);
+  };
+
+  const handleTogglePin = async (topic: Topic) => {
+    // TODO: When backend is ready, use API calls
+    // For now, use local state for UI demo
+    
+    setPinnedTopics(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(topic.max_id)) {
+        newSet.delete(topic.max_id);
+      } else {
+        newSet.add(topic.max_id);
+      }
+      return newSet;
+    });
+
+    // Update pin order
+    setPinOrder(prev => {
+      if (pinnedTopics.has(topic.max_id)) {
+        // Unpin: remove from order
+        return prev.filter(id => id !== topic.max_id);
+      } else {
+        // Pin: add to end of list
+        return [...prev, topic.max_id];
+      }
+    });
+
+    // TODO: Uncomment when backend is ready
+    /*
+    if (!streamId) return;
+    
+    try {
+      if (topic.is_pinned) {
+        await unpinTopic({ topicId: topic.max_id, streamId });
+      } else {
+        await pinTopic({ topicId: topic.max_id, streamId });
+      }
+    } catch (error) {
+      console.error('Failed to toggle pin:', error);
+    }
+    */
   };
 
   const handleSendMessage = async (new_message: string) => {
@@ -116,11 +175,43 @@ const OverviewPage: FC = () => {
     queryClient.invalidateQueries({ queryKey: ['messages', streamId, selectedTopic?.name] });
   };
 
-  const handleRemoveReaction = (messageId: string, emoji: string) => {
-    console.log(`Remove reaction: ${emoji} from message ${messageId}`);
-    // Refresh messages after removing reaction
+  const handleDeleteMessage = (messageId: string) => {
+    console.log(`🗑️ Delete message requested for ID: ${messageId}`);
+    // The actual API call is handled by ChatMessage component via useDeleteMessage hook
+    // We just need to refresh the messages list after deletion
     queryClient.invalidateQueries({ queryKey: ['messages', streamId, selectedTopic?.name] });
   };
+
+
+
+  // Sắp xếp topics: pinned topics ở đầu theo thứ tự pin, unpinned topics ở sau
+  const sortedTopics = useMemo(() => {
+    if (!topics?.topics) return [];
+    
+    const topicList = [...topics.topics];
+    
+    return topicList.sort((a, b) => {
+      // Use local state for now (TODO: use API data when backend is ready)
+      const aIsPinned = pinnedTopics.has(a.max_id);
+      const bIsPinned = pinnedTopics.has(b.max_id);
+      
+      // Nếu cả hai đều pinned hoặc cả hai đều không pinned
+      if (aIsPinned === bIsPinned) {
+        if (aIsPinned) {
+          // Cả hai đều pinned: sắp xếp theo pin order (pin trước lên trên)
+          const aIndex = pinOrder.indexOf(a.max_id);
+          const bIndex = pinOrder.indexOf(b.max_id);
+          return aIndex - bIndex;
+        } else {
+          // Cả hai đều không pinned: giữ thứ tự ban đầu từ API
+          return 0;
+        }
+      }
+      
+      // Một cái pinned, một cái không: pinned lên trên
+      return aIsPinned ? -1 : 1;
+    });
+  }, [topics?.topics, pinnedTopics, pinOrder]);
 
   return (
     <>
@@ -129,11 +220,11 @@ const OverviewPage: FC = () => {
         <Col span={5}>
           {isLoading ? (
             <Spin />
-          ) : streams?.streams?.length ? (
+          ) : (streams as StreamsResponse)?.streams?.length ? (
             <List
               bordered
               className="streams-list"
-              dataSource={streams.streams}
+              dataSource={(streams as StreamsResponse).streams}
               renderItem={(stream: Stream) => (
                 <List.Item
                   key={stream.stream_id}
@@ -155,20 +246,40 @@ const OverviewPage: FC = () => {
             <Col span={18}>
               {topicLoad ? (
                 <Spin />
-              ) : topics?.topics?.length ? (
+              ) : sortedTopics.length ? (
                 <List
                   bordered
-                  dataSource={topics?.topics}
-                  renderItem={(topic: Topic) => (
-                    <List.Item
-                      key={topic.max_id}
-                      className={selectedTopic?.max_id === topic.max_id ? 'selected' : ''}
-                      onClick={() => setSelectedTopic(topic)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      {topic.name}
-                    </List.Item>
-                  )}
+                  dataSource={sortedTopics}
+                  renderItem={(topic: Topic) => {
+                    const isTopicPinned = pinnedTopics.has(topic.max_id);
+                    return (
+                      <List.Item
+                        key={topic.max_id}
+                        className={selectedTopic?.max_id === topic.max_id ? 'selected' : ''}
+                        style={{ cursor: 'pointer' }}
+                        actions={[
+                          <Button
+                            key="pin"
+                            type="text"
+                            size="small"
+                            icon={isTopicPinned ? <Pin size={16} /> : <PinOff size={16} />}
+                            onClick={(e: React.MouseEvent) => {
+                              e.stopPropagation(); // Prevent topic selection
+                              handleTogglePin(topic);
+                            }}
+                            title={isTopicPinned ? 'Unpin topic' : 'Pin topic'}
+                            style={{ 
+                              color: isTopicPinned ? '#1890ff' : '#8c8c8c',
+                              padding: '4px'
+                            }}
+                          />
+                        ]}
+                        onClick={() => setSelectedTopic(topic)}
+                      >
+                        <span>{topic.name}</span>
+                      </List.Item>
+                    );
+                  }}
                 />
               ) : (
                 <Empty description="No Topics available" />
@@ -191,7 +302,7 @@ const OverviewPage: FC = () => {
             currentUserId={currentUserId || 'current-user'}
             onSendMessage={(message) => handleSendMessage(message)}
             onEmojiReaction={handleEmojiReaction}
-            onRemoveReaction={handleRemoveReaction}
+            onDeleteMessage={handleDeleteMessage}
           />
         </Col>
       </Row>

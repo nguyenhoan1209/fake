@@ -197,7 +197,7 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
             <button
               key={action.id}
               className="message-action-btn"
-              onClick={() => (action.onClick)}
+              onClick={() => action.onClick()}
               disabled={action.disabled}
             >
               <span className="action-icon">{action.icon}</span>

@@ -4,7 +4,7 @@ import { DownloadOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import MessageContextMenu from './MessageContextMenu';
 import './ChatMessage.scss';
-import { useRemoveReaction } from 'libs/hooks/api/useChat';
+import { useRemoveReaction, useDeleteMessage } from 'libs/hooks/api/useChat';
 
 const { Text } = Typography;
 
@@ -43,21 +43,24 @@ interface ChatMessageProps {
   onEmojiReaction?: (messageId: string, emoji: string) => void;
   onRemoveReaction?: (messageId: string, emoji: string) => void;
   onMessageAction?: (messageId: string, action: string) => void;
+  onDeleteMessage?: (messageId: string) => void;
 }
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ 
   message, 
   currentUserId,
-  onDownloadAttachment, 
-  onPlayAudio, 
+  onDownloadAttachment,
+  onPlayAudio,
   onEmojiReaction,
   onRemoveReaction,
-  onMessageAction 
+  onMessageAction,
+  onDeleteMessage,
 }) => {
   const [contextMenuVisible, setContextMenuVisible] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
   const messageRef = useRef<HTMLDivElement>(null);
   const removeReactionMutation = useRemoveReaction();
+  const deleteMessageMutation = useDeleteMessage();
 
   // Context menu handlers
   const handleMessageRightClick = (e: React.MouseEvent) => {
@@ -91,9 +94,19 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   };
 
   const handleMessageAction = (action: string) => {
-    if (onMessageAction) {
+    if (action === 'delete') {
+      // Handle delete message
+      const messageIdAsNumber = parseInt(message.id);
+      if (!isNaN(messageIdAsNumber)) {
+        deleteMessageMutation.mutate(messageIdAsNumber);
+      }
+      if (onDeleteMessage) {
+        onDeleteMessage(message.id);
+      }
+    } else if (onMessageAction) {
       onMessageAction(message.id, action);
     }
+    setContextMenuVisible(false);
   };
 
   // Click vào emoji pill bên dưới -> gọi API DELETE reaction

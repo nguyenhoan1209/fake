@@ -15,6 +15,7 @@ interface ChatProps {
   onDownloadAttachment?: (attachment: MessageAttachment) => void;
   onEmojiReaction?: (messageId: string, emoji: string) => void;
   onMessageAction?: (messageId: string, action: string) => void;
+  onDeleteMessage?: (messageId: string) => void;
   currentUserId?: string;
 }
 
@@ -27,6 +28,7 @@ const Chat: React.FC<ChatProps> = ({
   onDownloadAttachment,
   onEmojiReaction,
   onMessageAction,
+  onDeleteMessage,
   currentUserId = 'current-user',
 }) => {
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
@@ -100,12 +102,13 @@ const Chat: React.FC<ChatProps> = ({
     } else {
       // Default behavior based on action
       switch (action) {
-        case 'copy':
+        case 'copy': {
           const message = messages.find(m => m.id === messageId);
           if (message) {
             navigator.clipboard.writeText(message.content).catch(console.error);
           }
           break;
+        }
         case 'reply':
           console.log(`Reply to message ${messageId}`);
           break;
@@ -124,6 +127,15 @@ const Chat: React.FC<ChatProps> = ({
         default:
           console.log(`Action ${action} on message ${messageId}`);
       }
+    }
+  };
+
+  const handleDeleteMessage = (messageId: string) => {
+    if (onDeleteMessage) {
+      onDeleteMessage(messageId);
+    } else {
+      // Default delete behavior - just log
+      console.log(`Delete message ${messageId}`);
     }
   };
 
@@ -158,10 +170,12 @@ const Chat: React.FC<ChatProps> = ({
                 <ChatMessage
                   key={message.id}
                   message={message}
+                  currentUserId={parseInt(currentUserId)}
                   onDownloadAttachment={handleDownloadAttachment}
                   onPlayAudio={handlePlayAudio}
                   onEmojiReaction={handleEmojiReaction}
                   onMessageAction={handleMessageAction}
+                  onDeleteMessage={handleDeleteMessage}
                 />
               ))}
               <div ref={messagesEndRef} />

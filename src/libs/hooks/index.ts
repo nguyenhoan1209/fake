@@ -5,4 +5,4 @@ export {
 } from './api/useAuth';
 export { useValidation } from './form/useValidation';
 export { useFetchStreams, useFetchMessages, useSendMessage, useAddReaction, useRemoveReaction, usePollingEvent } from './api/useChat';
-export { useFetchTopics } from './api/useTopic';
+export { useFetchTopics, usePinTopic, useUnpinTopic } from './api/useTopic';

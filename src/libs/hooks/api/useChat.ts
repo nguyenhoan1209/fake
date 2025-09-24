@@ -9,6 +9,7 @@ const url = {
   send_message: "api/v1/messages",
     add_reaction: "api/v1/messages",
     remove_reaction: "api/v1/messages",
+    delete_message: "api/v1/messages",
   events: "api/v1/events",
 };
 
@@ -30,6 +31,30 @@ interface ZulipMessage {
         reaction_type: string;
         user_id: number;
     }>;
+}
+
+// Zulip API Response interfaces
+interface ZulipMessagesResponse {
+    result: 'success' | 'error';
+    messages: ZulipMessage[];
+    msg?: string;
+}
+
+interface ZulipEventsResponse {
+    result: 'success' | 'error';
+    events: Array<{
+        id: number;
+        type: string;
+        [key: string]: unknown;
+    }>;
+    msg?: string;
+}
+
+// Reaction request interface
+interface ReactionRequest {
+    emoji_name: string;
+    emoji_code?: string;
+    reaction_type?: 'unicode_emoji' | 'realm_emoji' | 'zulip_extra_emoji';
 }
 
 // Transform Zulip message to ChatMessageData
@@ -114,7 +139,7 @@ const useAddReaction = () => {
     const queryClient = useQueryClient();
     
     return useMutation({
-        mutationFn: ({ messageId, reactionData }: { messageId: number; reactionData: ReactionRequest }): Promise<any> => {
+        mutationFn: ({ messageId, reactionData }: { messageId: number; reactionData: ReactionRequest }): Promise<unknown> => {
             // Convert object to URLSearchParams for form data
             const formData = new FormData();
             formData.append('emoji_name', reactionData.emoji_name);
@@ -137,7 +162,8 @@ const useAddReaction = () => {
         onSuccess: async () => {
             queryClient.invalidateQueries({ queryKey: ['messages'] });
         },
-        onError: (error: any) => {
+        onError: (_error: unknown) => {
+            // Error handling if needed
         },
     });
 }
@@ -145,7 +171,7 @@ const useRemoveReaction = () => {
     const queryClient = useQueryClient();
     
     return useMutation({
-        mutationFn: ({ messageId, reactionData }: { messageId: number; reactionData: ReactionRequest }): Promise<any> => {
+        mutationFn: ({ messageId, reactionData }: { messageId: number; reactionData: ReactionRequest }): Promise<unknown> => {
             // Convert object to URLSearchParams for form data
             const formData = new URLSearchParams();
             formData.append('emoji_name', reactionData.emoji_name);
@@ -168,7 +194,31 @@ const useRemoveReaction = () => {
         onSuccess: async () => {
             queryClient.invalidateQueries({ queryKey: ['messages'] });
         },
-        onError: (error: any) => {
+        onError: (_error: unknown) => {
+            // Error handling if needed
+        },
+    });
+}
+
+const useDeleteMessage = () => {
+    const queryClient = useQueryClient();
+    
+    return useMutation({
+        mutationFn: (messageId: number): Promise<void> => {
+            return fetcher(
+                {
+                    method: HTTPMethod.DELETE,
+                    url: `${url.delete_message}/${messageId}`,
+                },
+                { withToken: true },
+            );
+        },
+        onSuccess: async () => {
+            // Invalidate and refetch messages after successful deletion
+            queryClient.invalidateQueries({ queryKey: ['messages'] });
+        },
+        onError: (error: unknown) => {
+            console.error('Failed to delete message:', error);
         },
     });
 }
@@ -338,4 +388,4 @@ const usePollingEvent = (initiallast_event_id: number = -1, queue_id?: string) =
   );
 };
 
-export { useFetchStreams, useFetchMessages, transformZulipMessage, useSendMessage, useAddReaction, useRemoveReaction, useLongLiveQuery, usePollingEvent };
+export { useFetchStreams, useFetchMessages, transformZulipMessage, useSendMessage, useAddReaction, useRemoveReaction, useDeleteMessage, useLongLiveQuery, usePollingEvent };
