@@ -7,3 +7,4 @@ export { ViewIcon } from './ICView';
 export { DeleteIcon } from './ICDelete';
 export { ChangePassIcon } from './ICChangePass';
 export { ICStatus } from './ICStatus';
+export { PinIcon, PinOffIcon } from './ICPin';
