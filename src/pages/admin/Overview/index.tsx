@@ -9,9 +9,11 @@ import {
   usePollingEvent,
   usePinTopic,
   useUnpinTopic,
+  useFetchUsers,
 } from 'libs/hooks';
 import { useQueryClient } from '@tanstack/react-query';
-import { Col, List, Typography, Spin, Empty, Row, Button } from 'antd';
+import { Col, List, Typography, Spin, Empty, Row, Button, Avatar } from 'antd';
+import { UserOutlined} from '@ant-design/icons';
 import { Pin, PinOff } from 'lucide-react';
 import { Chat } from 'components/Chat';
 import { ChatMessageData } from 'components/Chat/ChatMessage';
@@ -60,6 +62,8 @@ const OverviewPage: FC = () => {
   const [pinOrder, setPinOrder] = useState<string[]>([]);
   const { data: registerData } = useFetchRegisterData();
   const { data: events } = usePollingEvent(-1, registerData?.queue_id);
+
+  const { data: users, isLoading: usersLoading } = useFetchUsers();
 
   // Update local messages when initial messages change
   useEffect(() => {
@@ -136,21 +140,6 @@ const OverviewPage: FC = () => {
         return [...prev, topic.max_id];
       }
     });
-
-    // TODO: Uncomment when backend is ready
-    /*
-    if (!streamId) return;
-    
-    try {
-      if (topic.is_pinned) {
-        await unpinTopic({ topicId: topic.max_id, streamId });
-      } else {
-        await pinTopic({ topicId: topic.max_id, streamId });
-      }
-    } catch (error) {
-      console.error('Failed to toggle pin:', error);
-    }
-    */
   };
 
   const handleSendMessage = async (new_message: string) => {
@@ -288,7 +277,7 @@ const OverviewPage: FC = () => {
           </Row>
         </Col>
 
-        <Col span={16}>
+        <Col span={13}>
           <Chat
             title={
               selectedTopic
@@ -304,6 +293,45 @@ const OverviewPage: FC = () => {
             onEmojiReaction={handleEmojiReaction}
             onDeleteMessage={handleDeleteMessage}
           />
+        </Col>
+
+        <Col span={6}>
+          <div className="users-panel">
+            <div className="users-header">
+              <Title level={5} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <UserOutlined />
+                Thành viên ({users?.length})
+              </Title>
+            </div>
+                <List
+                  dataSource={users}
+                  renderItem={(user) => (
+                    <List.Item
+                      className={`user-item ${!user.is_active ? 'inactive' : ''}`}
+                      style={{ 
+                        cursor: 'pointer', 
+                        padding: '8px 0',
+                        borderBottom: '1px solid #f0f0f0'
+                      }}
+                    >
+                      <List.Item.Meta
+                        avatar={
+                          <Avatar
+                            src={user.avatar_url}
+                            icon={<UserOutlined />}
+                            size="small"
+                          />
+                        }
+                        title={
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              {user.full_name}
+                          </div>
+                        }
+                      />
+                    </List.Item>
+                  )}
+                />
+          </div>
         </Col>
       </Row>
     </>
